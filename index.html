@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>Bens Culturais Protegidos - Portal da Transparência MG</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <style>
+        :root {
+            --primary-dark:      #1a3a5c;
+            --primary-darker:    #0f2a44;
+            --accent-red:        #b93c42;
+            --accent-bright:     #db233f;
+            --background-light:  #f5f7fa;
+            --success-green:     #28a745;
+            --warning-yellow:    #ffc107;
+            --info-blue:         #17a2b8;
+            --border-color:      #dee2e6;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; overflow-x: hidden; margin: 0; padding: 0; height: auto; min-height: auto; }
+        body {
+            font-family: 'Montserrat', Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background-light);
+            padding-bottom: 15px;
+            overflow-x: hidden;
+        }
+        body, button, input, select, textarea, span, div { font-family: 'Montserrat', sans-serif !important; }
+        .material-icons { font-family: 'Material Icons' !important; font-size: 14px; vertical-align: middle; }
+
+        .main-container { height: auto; min-height: auto; overflow: visible; position: relative; }
+        .container-fluid { width: 100%; max-width: 88% !important; padding: 0 40px; margin: 0; height: auto; }
+        .dashboard-container { width: 100%; max-width: 100%; padding: 0 40px; margin: 0 auto; height: auto; }
+        .tab-content, .tab-pane { width: 100%; height: auto; min-height: auto; overflow: visible; }
+        .table-container { height: auto; min-height: auto; overflow: visible; position: relative; }
+        .iframe-mode { overflow: visible !important; }
+
+        .data-atualizacao-container { display: flex; justify-content: left; align-items: center; margin: 15px 0; }
+        .data-atualizacao-box {
+            background: transparent !important;
+            border-radius: 8px; padding: 8px 15px;
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; color: var(--primary-dark); font-weight: 600; box-shadow: none;
+        }
+        .data-atualizacao-box i { font-size: 14px; color: var(--accent-red); }
+
+        /* FILTROS */
+        .filter-container {
+            background: white; border-radius: 10px;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+            padding: 20px; margin-bottom: 20px; width: 100%;
+        }
+        .filter-label { font-size: 11px; font-weight: 600; color: #1a3a5c; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.3px; line-height: 1.3; }
+        .form-control, .form-select { border: 2px solid #e9ecef; border-radius: 6px; padding: 10px 12px; font-size: 13px; transition: all 0.3s ease; height: auto; width: 100%; }
+        .form-control:focus, .form-select:focus { border-color: var(--accent-red); box-shadow: 0 0 0 2px rgba(185,60,66,0.15); outline: none; }
+        .modern-select { border: 1.5px solid #dfe5ec !important; border-radius: 8px !important; padding: 10px 12px !important; font-size: 13px !important; height: 42px !important; line-height: 1.5 !important; background-color: #fff; transition: all 0.2s ease; width: 100%; }
+        .modern-select:focus { border-color: #1a3a5c !important; box-shadow: 0 0 0 2px rgba(26,58,92,0.1); outline: none; }
+        .filters-row { display: flex; gap: 15px; width: 100%; flex-wrap: wrap; margin-bottom: 12px; }
+        .filter-group { flex: 1; min-width: 140px; }
+        .botoes-abaixo { margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
+
+        /* DATASET TOGGLE */
+        .dataset-toggle { display:flex; gap:8px; background:#eef1f5; padding:4px; border-radius: 10px; width:fit-content; }
+        .dataset-toggle button { border:none; background:transparent; padding:9px 18px; border-radius:8px; font-size:12.5px; font-weight:700; color:#1a3a5c; cursor:pointer; display:flex; align-items:center; gap:6px; transition:.2s; }
+        .dataset-toggle button.active { background:#20445d; color:#fff; box-shadow:0 3px 8px rgba(0,0,0,0.15); }
+
+        /* CARDS */
+        .metric-card { background: white; border-radius: 8px; border: 1px solid #e5e9ef; box-shadow: 0 3px 12px rgba(0,0,0,0.06); overflow: hidden; height: 100%; transition: box-shadow 0.25s ease, transform 0.25s ease; }
+        .metric-card:hover { box-shadow: 0 8px 24px rgba(26,58,92,0.13); transform: translateY(-2px); }
+        .metric-header { background: #20445d; color: white; font-size: 13px; font-weight: 600; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; }
+        .metric-body { padding: 12px 15px; }
+        .metric-value { font-size: 20px; font-weight: 700; color: #171c21; }
+        .metric-sublabel { font-size: 10px; color: #94a3b8; font-weight: 500; margin-top: 2px; }
+
+        /* GRÁFICOS */
+        .chart-container { background: white; border-radius: 10px; box-shadow: 0 3px 12px rgba(0,0,0,0.06); margin-bottom: 20px; overflow: hidden; }
+        .chart-container canvas { max-width: 100%; }
+        .chart-header { background: #20445d; color: white; padding: 12px 16px; margin: 0; }
+        .chart-title { font-size: 14px; font-weight: 600; color: white; margin: 0; }
+        .chart-wrapper { height: 260px; padding: 10px 15px; width: 100%; }
+
+        /* TABELAS */
+        .table-badge { background: #1a3a5c; color: white; padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+        .table-fixed-header-container { position: relative; overflow: auto; width: 100%; max-height: 600px; }
+        .table-fixed-header-container table thead th { background-color: #54697b !important; color: white !important; position: sticky; top: 0; z-index: 10; font-weight: 600; padding: 10px 8px; font-size: 11px; text-transform: uppercase; white-space: nowrap; vertical-align: middle; line-height: 1.3; }
+        .table { width: 100%; font-size: 12px; border-collapse: collapse; table-layout: auto; }
+        .table th, .table td { border: 1px solid #d6dee6; }
+        .table thead th { background-color: #54697b !important; color: white !important; font-weight: 600; font-size: 11px; padding: 10px 8px; text-transform: uppercase; border: 1px solid #d6dee6; cursor: pointer; user-select: none; white-space: nowrap; vertical-align: middle; line-height: 1.3; }
+        .table thead th.th-wrap { white-space: normal !important; }
+        .table thead th:not(.text-right):not(.text-center) { min-width: 80px; }
+        .table thead th:first-child { border-top-left-radius: 8px; }
+        .table thead th:last-child  { border-top-right-radius: 8px; }
+        .table thead th:hover { background-color: #3d5566 !important; }
+        .table tbody tr { background-color: #ffffff; }
+        .table tbody td { padding: 10px 10px; vertical-align: middle; border-bottom: 1px solid #f1f1f1; font-size: 12px; }
+        .table tbody tr:hover { background-color: rgba(41,67,90,0.04); }
+        .table tfoot tr, .table tfoot td { background-color: #dfe3e8 !important; font-weight: 700; font-size: 12px; }
+        .table-responsive { display: block; width: 100%; overflow-x: auto; }
+
+        .proc-link, .org-link, .bem-link { color: #006a82; text-decoration: none; font-weight: 600; cursor: pointer; }
+        .proc-link:hover, .org-link:hover, .bem-link:hover { color: var(--accent-red); text-decoration: underline; }
+        .nao-aplica { color: #adb5bd; font-size: 11px; }
+        .sortable-header { cursor: pointer; position: relative; padding-right: 26px !important; }
+        .sortable-header:hover { background-color: #3d5566 !important; }
+        .sortable-header .sort-icon { font-size: 13px; position: absolute; right: 5px; top: 50%; transform: translateY(-50%); opacity: 0.8; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        /* BOTÕES */
+        .btn-pesquisa { background: linear-gradient(to right, #20445d, #20445d); border: none; padding: 0 16px; font-weight: 600; border-radius: 6px; transition: all 0.3s ease; font-size: 13px; color: white; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; height: 36px; white-space: nowrap; }
+        .btn-pesquisa:hover { background: linear-gradient(to right, var(--accent-red), #a32c32); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(185,60,66,0.2); color: white; }
+        .btn-secondary-custom { background: white; border: 2px solid var(--primary-darker); color: var(--primary-darker); padding: 0 16px; font-weight: 600; font-size: 13px; border-radius: 6px; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; height: 36px; white-space: nowrap; text-decoration: none !important; }
+        .btn-secondary-custom:hover { background-color: #132837 !important; color: white !important; border-color: #132837 !important; }
+        .btn-export { appearance: none; -webkit-appearance: none; background: transparent !important; border: 1px solid #d6dee6; color: #1a3a5c; padding: 0 14px; border-radius: 6px; font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; height: 32px; cursor: pointer; transition: all 0.2s ease; white-space: nowrap; }
+        .btn-export i { font-size: 14px !important; }
+        button.btn-export:hover { background-color: #1a3a5c !important; border-color: #1a3a5c !important; color: #ffffff !important; }
+        .btn-topo { background: #eeeff5; color: #1a3a5c; border: 1px solid #d6dee6; border-radius: 12px; padding: 0 16px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.3s ease; height: 32px; }
+        .btn-topo:hover { background-color: #1a3a5c; color: #ffffff; border-color: #1a3a5c; }
+
+        /* ABAS */
+        .nav-tabs-container { background: transparent; padding: 10px 0; margin-top: 5px; margin-bottom: 15px; width: 100%; }
+        .nav-tabs { border: none !important; gap: 10px; width: 100%; flex-wrap: wrap; }
+        .nav-tabs .nav-link { border: none !important; background: #ffffff !important; border-radius: 10px !important; padding: 8px 18px !important; font-weight: 500; font-size: 13px; color: #1a3a5c !important; display: inline-flex !important; align-items: center; gap: 6px; transition: all .25s ease; white-space: nowrap; }
+        .nav-tabs .nav-link:hover { background: #e6e9ed !important; }
+        .nav-tabs .nav-link.active { background: #234c63 !important; color: #fff !important; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        .nav-tabs .material-icons { font-size: 14px !important; }
+
+        /* MODAL */
+        .modal-creative .modal-header { background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-darker) 100%); color: white !important; padding: 15px 20px; border-bottom: none; }
+        .modal-creative .modal-header .modal-title { color: white !important; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+        .modal-creative .modal-header .btn-close { filter: brightness(0) invert(1); opacity: 1; }
+        .info-card { background: #f8fafd; border-radius: 10px; padding: 13px 16px; margin-bottom: 13px; border: 1px solid #e2e8f0; border-left: 4px solid var(--accent-red); }
+        .info-card.primary { border-left-color: var(--primary-dark); }
+        .info-label { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 4px; }
+        .info-value { font-size: 13px; font-weight: 500; color: #1e293b; word-break: break-word; }
+        .info-value.highlight { font-size: 16px; color: var(--accent-red); font-weight: 700; }
+        .modal { position: fixed !important; }
+        .modal-dialog { margin: 20px auto !important; }
+        .modal-body { max-height: 65vh; overflow-y: auto !important; overflow-x: hidden; }
+
+        /* PAGINAÇÃO */
+        .pagination-container { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; background: white; border-top: 1px solid #dee2e6; width: 100%; flex-wrap: wrap; gap: 10px; border-radius: 0 0 8px 8px; }
+        .pagination-info { display: flex; align-items: center; gap: 12px; font-size: 12px; color: #6c757d; flex-wrap: wrap; }
+        .pagination-controls { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        .pagination-controls button { min-width: 34px; height: 34px; border: 1px solid #dee2e6; background: white; color: var(--primary-dark); border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; font-size: 13px; padding: 0 6px; }
+        .pagination-controls button:hover:not(:disabled) { background-color: var(--primary-dark); color: white; border-color: var(--primary-dark); }
+        .pagination-controls button.active { background-color: var(--primary-dark); color: white; border-color: var(--primary-dark); }
+        .pagination-controls button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .page-size-selector { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6c757d; }
+        .page-size-selector select { width: 70px; border: 1px solid #d6dee6; border-radius: 6px; padding: 4px 6px; font-size: 12px; background-color: white; color: var(--primary-dark); font-weight: 600; cursor: pointer; }
+
+        /* TOOLBAR */
+        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+        .toolbar-left  { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .toolbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+        /* LOADING */
+        .loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(238,241,246,0.95); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; gap: 14px; }
+        .loading-overlay.show { display: flex; }
+        .loading-progress { font-size: 13px; color: #20445d; font-weight: 700; }
+
+        /* TOAST */
+        .toast-notification { position: fixed; top: 20px; right: 20px; background: white; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 12px 20px; transform: translateX(120%); transition: transform 0.3s ease; z-index: 10000; border-left: 4px solid; max-width: 350px; }
+        .toast-notification.show { transform: translateX(0); }
+        .toast-notification.success { border-left-color: var(--success-green); }
+        .toast-notification.error { border-left-color: var(--accent-red); }
+        .toast-content { display: flex; align-items: center; font-size: 13px; color: var(--primary-dark); gap: 8px; }
+
+        /* METADADOS / DICIONÁRIO */
+        .metadata-container { background: white; border-radius: 10px; box-shadow: 0 3px 12px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 20px; }
+        .metadata-header { background: #20445d; color: white; padding: 12px 16px; font-size: 13px; font-weight: 700; display:flex; align-items:center; }
+        .metadata-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .metadata-table thead th { background-color: #54697b !important; color: white !important; padding: 10px; font-size: 11px; text-transform: uppercase; font-weight: 600; }
+        .metadata-table tbody tr:nth-child(even) { background: #f8fafd; }
+        .metadata-table tbody td { padding: 10px; border-bottom: 1px solid #f0f4f8; vertical-align: top; color: #334155; }
+        .metadata-table code { background: #e2e8f0; color: #0f172a; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+        .dic-row-highlight { background:#fffbea !important; }
+
+        /* BADGES */
+        .badge-esfera { padding: 3px 10px; border-radius: 20px; font-size: 10.5px; font-weight: 700; display: inline-block; letter-spacing: 0.2px; white-space: nowrap; }
+        .badge-federal   { background: #fbe1e2; color: #8f1c22; border: 1px solid #f2c0c2; }
+        .badge-estadual  { background: #dcecff; color: #1a4f8a; border: 1px solid #b8d4f5; }
+        .badge-municipal { background: #dcf5e7; color: #0f6b3a; border: 1px solid #b2e6c8; }
+        .badge-tipo { background:#eef1f5; color:#1a3a5c; border:1px solid #d6dee6; padding:3px 9px; border-radius:20px; font-size:10.5px; font-weight:700; white-space:nowrap; }
+
+        /* COMBOBOX FILTER */
+        .combo-filter-wrap { position: relative; width: 100%; }
+        .combo-filter-input { border: 1.5px solid #dfe5ec; border-radius: 8px; padding: 10px 32px 10px 12px; font-size: 13px; height: 42px; line-height: 1.5; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7'%3E%3Cpath d='M0 0l6 7 6-7z' fill='%231a3a5c'/%3E%3C/svg%3E") no-repeat right 10px center; transition: all 0.2s ease; width: 100%; cursor: pointer; }
+        .combo-filter-input:focus { border-color: #1a3a5c; box-shadow: 0 0 0 2px rgba(26,58,92,0.1); outline: none; }
+        .combo-filter-dropdown { position: absolute; top: 44px; left: 0; right: 0; background: #fff; border: 1.5px solid #dfe5ec; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); z-index: 9999; max-height: 260px; overflow-y: auto; display: none; }
+        .combo-filter-dropdown.open { display: block; }
+        .combo-filter-option { padding: 9px 12px; font-size: 12px; cursor: pointer; color: #1e293b; border-bottom: 1px solid #f1f5f9; }
+        .combo-filter-option:last-child { border-bottom: none; }
+        .combo-filter-option:hover, .combo-filter-option.active { background: #f0f4f8; color: #1a3a5c; font-weight: 600; }
+        .combo-filter-option.selected { background: #e6f0f8; font-weight: 700; color: #1a3a5c; }
+        .combo-clear-btn { position: absolute; right: 26px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 14px; padding: 2px 4px; line-height: 1; display: none; }
+        .combo-clear-btn.visible { display: block; }
+
+        /* RESUMO POR MUNICÍPIO (Visão Geral) */
+        .resumo-tr { cursor: pointer; }
+        .resumo-tr td:first-child { font-weight: 500; color: #1a3a5c; }
+
+        .empty-state { text-align:center; padding: 30px 20px; color:#94a3b8; }
+
+        /* RESPONSIVO */
+        @media (max-width: 992px) { .container-fluid, .dashboard-container { padding: 0 15px !important; } }
+        @media (max-width: 768px) {
+            .container-fluid, .dashboard-container { padding: 0 10px !important; }
+            .nav-tabs { flex-direction: column; gap: 6px; }
+            .nav-tabs .nav-link { width: 100%; justify-content: flex-start; font-size: 13px; padding: 10px 14px !important; }
+            .filters-row { flex-direction: column; }
+            .filter-group { min-width: 100%; width: 100%; }
+            .botoes-abaixo { flex-direction: column; }
+            .btn-pesquisa, .btn-secondary-custom { width: 100%; justify-content: center; }
+            .toolbar { flex-direction: column; align-items: flex-start; }
+            .pagination-container { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .chart-wrapper { height: 200px; }
+            .dataset-toggle { width:100%; }
+            .dataset-toggle button { flex:1; justify-content:center; }
+        }
+    </style>
+</head>
+<body class="iframe-mode">
+
+<div class="main-container">
+    <div class="container-fluid dashboard-container">
+
+        <!-- Abas -->
+        <div class="nav-tabs-container">
+            <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="visaogeral-tab" data-bs-toggle="tab" data-bs-target="#tab-visaogeral">
+                        <i class="material-icons">insights</i>Visão Geral
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="consulta-tab" data-bs-toggle="tab" data-bs-target="#tab-consulta">
+                        <i class="material-icons">search</i>Consulta Individual
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="dicionario-tab" data-bs-toggle="tab" data-bs-target="#tab-dicionario">
+                        <i class="material-icons">menu_book</i>Dicionário de Dados
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="downloads-tab" data-bs-toggle="tab" data-bs-target="#tab-downloads">
+                        <i class="material-icons">download</i>Downloads
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Data de atualização -->
+        <div class="data-atualizacao-container">
+            <div class="data-atualizacao-box">
+                <i class="material-icons">event</i>
+                Atualizado em: <span id="data-atualizacao-header" style="margin-left:4px;">Carregando...</span>
+            </div>
+        </div>
+
+        <!-- Conteúdo das abas -->
+        <div class="tab-content" id="dashboardTabsContent">
+            <div class="tab-pane fade show active" id="tab-visaogeral" role="tabpanel">
+                <div id="visaogeral-content"></div>
+            </div>
+            <div class="tab-pane fade" id="tab-consulta" role="tabpanel">
+                <div id="consulta-content"></div>
+            </div>
+            <div class="tab-pane fade" id="tab-dicionario" role="tabpanel">
+                <div id="dicionario-content"></div>
+            </div>
+            <div class="tab-pane fade" id="tab-downloads" role="tabpanel">
+                <div id="downloads-content"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de detalhes -->
+<div class="modal fade" id="modalDetalhe" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered" style="max-width:560px;">
+        <div class="modal-content modal-creative">
+            <div class="modal-header">
+                <div class="modal-title"><i class="material-icons">info</i><span id="modalTitulo">Detalhes do Bem</span></div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div id="toastSucesso" class="toast-notification success" style="display:none;">
+    <div class="toast-content">
+        <i class="material-icons" style="color:#28a745">check_circle</i>
+        <span id="toastMsg">Concluído!</span>
+    </div>
+</div>
+
+<!-- Loading -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border" role="status" style="color:#20445d;width:2.5rem;height:2.5rem;"></div>
+    <div class="loading-progress" id="loadingProgress">Carregando dados...</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+// ============================================================
+// 1. CONFIGURAÇÃO
+// ============================================================
+const GITHUB_BASE_TOMBAMENTO = 'https://raw.githubusercontent.com/transparencia-mg/bens_protegidos_tombamento/main/dataset/data/';
+const CSV_TOMBAMENTO         = 'bens_protegidos_tombamentos.csv';
+const REPO_TOMBAMENTO        = 'https://github.com/transparencia-mg/bens_protegidos_tombamento';
+const COMMITS_API_TOMBAMENTO = 'https://api.github.com/repos/transparencia-mg/bens_protegidos_tombamento/commits?path=dataset/data&sha=main&per_page=1';
+
+const GITHUB_BASE_REGISTRADO = 'https://raw.githubusercontent.com/transparencia-mg/bens-protegidos-registrados/main/dataset/data/';
+const CSV_REGISTRADO         = 'bens_protegidos_registrados.csv';
+const REPO_REGISTRADO        = 'https://github.com/transparencia-mg/bens-protegidos-registrados';
+const COMMITS_API_REGISTRADO = 'https://api.github.com/repos/transparencia-mg/bens-protegidos-registrados/commits?path=dataset/data&sha=main&per_page=1';
+
+// ============================================================
+// 2. GLOBALS
+// ============================================================
+let dadosTombamento = [];
+let dadosRegistrado = [];
+let dadosFiltrados  = [];   // resultado corrente da Consulta Individual (base ativa)
+let datasetAtivo    = 'tombamento'; // 'tombamento' | 'registrado'
+let paginaAtual = 1;
+let porPagina   = 25;
+let sortCfg = { col: null, dir: 'asc' };
+window._combos = {};
+window._charts = {};
+
+// ============================================================
+// 3. UTILITÁRIOS
+// ============================================================
+function mostrarLoading(show, msg) {
+    const el = document.getElementById('loadingOverlay');
+    if (show) el.classList.add('show'); else { el.classList.remove('show'); el.style.display='none'; }
+    if (msg) document.getElementById('loadingProgress').textContent = msg;
+}
+
+function mostrarToast(msg) {
+    const t = document.getElementById('toastSucesso');
+    document.getElementById('toastMsg').textContent = msg || 'Concluído!';
+    t.style.display = 'flex';
+    t.classList.add('show');
+    setTimeout(()=>{ t.classList.remove('show'); setTimeout(()=>{ t.style.display='none'; },300); }, 2500);
+}
+
+function _limpar(s) { return String(s==null?'':s).replace(/[\uFEFF\u200B\u00A0]/g,'').trim(); }
+function esc(s) { return String(s==null?'':s).replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+
+function extrairAno(v) {
+    const s = _limpar(v);
+    const m = s.match(/(1[5-9]\d{2}|20\d{2})/);
+    return m ? parseInt(m[1],10) : null;
+}
+
+function normalizarTipo(v) {
+    const s = _limpar(v).toUpperCase().replace(/[^A-Z]/g,'');
+    if (s.includes('BINTE')) return 'BIntegrado';
+    if (s === 'BI' || s === 'BM' || s === 'CP' || s === 'NH') return s;
+    return _limpar(v) || 'Não informado';
+}
+const NOME_TIPO = { 'BI':'Bem Imóvel', 'BM':'Bem Móvel', 'CP':'Conjunto Paisagístico', 'NH':'Núcleo Histórico', 'BIntegrado':'Bem Integrado' };
+function nomeTipo(sigla){ return NOME_TIPO[sigla] || sigla; }
+
+// Ordenação genérica (usada na tabela da Consulta Individual)
+function ordenar(arr, col, dir) {
+    if (!col) return arr;
+    return [...arr].sort((a,b)=>{
+        let va = a[col], vb = b[col];
+        const na = typeof va === 'number', nb = typeof vb === 'number';
+        if (na || nb) { va = va||0; vb = vb||0; }
+        else { va = (va||'').toString().toLowerCase(); vb = (vb||'').toString().toLowerCase(); }
+        if (va < vb) return dir==='asc' ? -1 : 1;
+        if (va > vb) return dir==='asc' ? 1 : -1;
+        return 0;
+    });
+}
+
+function voltarAoTopo() { window.scrollTo({ top:0, behavior:'smooth' }); }
+
+function iframeH() {
+    const h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) + 10;
+    try { if (window.parent && window.parent !== window) window.parent.postMessage({ iframeHeight:h, iframeResize:true, type:'resize' }, '*'); } catch(e) {}
+}
+
+function badgeEsfera(v) {
+    const s = (v||'').toUpperCase();
+    return `<span class="badge-esfera badge-${s.toLowerCase()||'outros'}">${v||'Não informado'}</span>`;
+}
+function badgeTipo(sigla) {
+    return `<span class="badge-tipo">${nomeTipo(sigla)}</span>`;
+}
+
+// Exportação CSV genérica (campos = chaves do objeto, labels = cabeçalhos)
+function baixarCSV(nomeArquivo, campos, labels, dados) {
+    if (!dados.length) { mostrarToast('Não há dados para exportar.'); return; }
+    let csv = '\uFEFF' + labels.join(';') + '\n';
+    dados.forEach(r => { csv += campos.map(c => `"${String(r[c]==null?'':r[c]).replace(/"/g,'""')}"`).join(';') + '\n'; });
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nomeArquivo;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Exportação PDF genérica
+function baixarPDF(titulo, campos, labels, dados) {
+    if (!dados.length) { mostrarToast('Não há dados para exportar.'); return; }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation:'landscape' });
+    doc.setFontSize(13);
+    doc.text(titulo, 14, 14);
+    doc.autoTable({
+        startY: 20,
+        head: [labels],
+        body: dados.map(r => campos.map(c => r[c] || '-')),
+        styles: { fontSize: 7 },
+        headStyles: { fillColor: [32,68,93] }
+    });
+    doc.save(titulo.toLowerCase().replace(/[^a-z0-9]+/g,'_') + '.pdf');
+}
+</script>
+<script>
+// ============================================================
+// 4. CARREGAMENTO DE DADOS
+// ============================================================
+async function parseCSVUrl(url) {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Falha ao carregar ' + url);
+    let texto = await resp.text();
+    texto = texto.replace(/^\uFEFF/, '');
+    return Papa.parse(texto, { header:true, skipEmptyLines:true, delimiter:';' }).data;
+}
+
+async function carregarDados() {
+    mostrarLoading(true, 'Carregando bens tombados...');
+    try {
+        const bruto1 = await parseCSVUrl(GITHUB_BASE_TOMBAMENTO + CSV_TOMBAMENTO);
+        dadosTombamento = bruto1.filter(r => _limpar(r.cidade) || _limpar(r.denominacao_do_bem_tombado)).map(r => ({
+            cidade: _limpar(r.cidade),
+            denominacao_do_bem_tombado: _limpar(r.denominacao_do_bem_tombado),
+            endereco: _limpar(r.endereco) || 'Não informado',
+            tipo_original: _limpar(r.tipo) || 'Não informado',
+            tipo: normalizarTipo(r.tipo),
+            ano_original: _limpar(r.ano_de_tombamento) || 'Não informado',
+            ano: extrairAno(r.ano_de_tombamento)
+        }));
+
+        mostrarLoading(true, 'Carregando bens registrados...');
+        const bruto2 = await parseCSVUrl(GITHUB_BASE_REGISTRADO + CSV_REGISTRADO);
+        dadosRegistrado = bruto2.filter(r => _limpar(r.municipio) || _limpar(r.nome_do_bem_registrado)).map(r => ({
+            municipio: _limpar(r.municipio),
+            homologacao: _limpar(r.homologacao) || 'Não informado',
+            nome_do_bem_registrado: _limpar(r.nome_do_bem_registrado),
+            local_de_ocorrencia_do_bem_imaterial_registrado: _limpar(r.local_de_ocorrencia_do_bem_imaterial_registrado) || 'Não informado',
+            esfera_de_protecao: _limpar(r.esfera_de_protecao).toUpperCase() || 'Não informado',
+            categoria: _limpar(r.categoria) || 'Não informado',
+            exercicio: _limpar(r.exercicio_aceito_para_efeito_de_pontuacao).replace(/,0$/,'') || 'Não informado'
+        }));
+
+        renderizarVisaoGeral();
+        renderizarConsulta();
+        renderizarDicionario();
+        renderizarDownloads();
+        setupDataAtualizacao();
+        aplicarFiltrosDaURL();
+    } catch (e) {
+        console.error(e);
+        mostrarToast('Erro ao carregar as bases de dados.');
+    } finally {
+        mostrarLoading(false);
+        setTimeout(iframeH, 400);
+    }
+}
+
+async function setupDataAtualizacao() {
+    const el = document.getElementById('data-atualizacao-header');
+    try {
+        const respostas = await Promise.all([
+            fetch(COMMITS_API_TOMBAMENTO).then(r=>r.ok?r.json():[]).catch(()=>[]),
+            fetch(COMMITS_API_REGISTRADO).then(r=>r.ok?r.json():[]).catch(()=>[])
+        ]);
+        const datas = respostas.flat()
+            .map(c => c && c.commit && c.commit.committer && c.commit.committer.date)
+            .filter(Boolean).map(d=>new Date(d)).filter(d=>!isNaN(d));
+        if (datas.length > 0) { el.textContent = new Date(Math.max(...datas)).toLocaleDateString('pt-BR'); return; }
+    } catch(e) {}
+    el.textContent = 'não disponível';
+}
+
+function opcoesUnicas(lista, campo, formatador) {
+    const vals = [...new Set(lista.map(r=>r[campo]).filter(Boolean))].sort();
+    return vals.map(v => ({ value:v, label: formatador ? formatador(v) : v }));
+}
+
+// ============================================================
+// 5. VISÃO GERAL
+// ============================================================
+function renderizarVisaoGeral() {
+    const c = document.getElementById('visaogeral-content'); if (!c) return;
+
+    c.innerHTML = `
+    <!-- FILTRO POR MUNICÍPIO -->
+    <div class="filter-container">
+        <div class="filters-row">
+            <div class="filter-group" style="flex:1;min-width:240px;">
+                <label class="filter-label">Município</label>
+                ${buildComboHTML('filtroMunicipioVG','Selecione ou digite o município...')}
+            </div>
+        </div>
+        <div class="botoes-abaixo">
+            <button class="btn-pesquisa" onclick="aplicarFiltroMunicipioVG()"><i class="material-icons">refresh</i> Atualizar Filtros</button>
+            <button class="btn-secondary-custom" onclick="limparFiltroMunicipioVG()"><i class="material-icons">clear</i> Limpar Filtros</button>
+        </div>
+    </div>
+
+    <!-- MÉTRICAS -->
+    <div class="row g-3 mb-4" id="metricasVG"></div>
+
+    <!-- GRÁFICOS: TOMBAMENTOS -->
+    <h6 style="font-size:12.5px;font-weight:700;color:#20445d;text-transform:uppercase;letter-spacing:.3px;margin:4px 0 10px;display:flex;align-items:center;gap:6px;"><i class="material-icons" style="font-size:16px;">apartment</i> Bens Tombados</h6>
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="chart-container">
+                <div class="chart-header"><h4 class="chart-title">Por Tipo de Bem</h4></div>
+                <div class="chart-wrapper"><canvas id="chartTipoTombamento"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-container">
+                <div class="chart-header"><h4 class="chart-title">Top 10 Municípios</h4></div>
+                <div class="chart-wrapper"><canvas id="chartMunicipioTombamento"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-container">
+                <div class="chart-header"><h4 class="chart-title">Por Década de Tombamento</h4></div>
+                <div class="chart-wrapper"><canvas id="chartDecadaTombamento"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GRÁFICOS: REGISTRADOS -->
+    <h6 style="font-size:12.5px;font-weight:700;color:#20445d;text-transform:uppercase;letter-spacing:.3px;margin:4px 0 10px;display:flex;align-items:center;gap:6px;"><i class="material-icons" style="font-size:16px;">celebration</i> Bens Registrados (Patrimônio Imaterial)</h6>
+    <div class="row g-3 mb-3">
+        <div class="col-md-4">
+            <div class="chart-container">
+                <div class="chart-header"><h4 class="chart-title">Por Esfera de Proteção</h4></div>
+                <div class="chart-wrapper"><canvas id="chartEsferaRegistrado"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-container">
+                <div class="chart-header"><h4 class="chart-title">Top 10 Municípios</h4></div>
+                <div class="chart-wrapper"><canvas id="chartMunicipioRegistrado"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="chart-container">
+                <div class="chart-header"><h4 class="chart-title">Top 10 Categorias</h4></div>
+                <div class="chart-wrapper"><canvas id="chartCategoriaRegistrado"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESUMO POR MUNICÍPIO -->
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="chart-container">
+                <div class="chart-header"><h4 class="chart-title">Resumo por Município</h4></div>
+                <div id="resumoMunicipio"></div>
+            </div>
+        </div>
+    </div>
+    <p style="font-size:11.5px;color:#94a3b8;text-align:center;margin-top:-6px;">
+        <i class="material-icons" style="font-size:13px;vertical-align:middle;">touch_app</i>
+        Clique em um município para ver os bens correspondentes na Consulta Individual.
+    </p>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+        <button class="btn-topo" onclick="voltarAoTopo()"><i class="material-icons">arrow_upward</i> Voltar ao topo</button>
+    </div>`;
+
+    inicializarComboMunicipioVG();
+    atualizarMetricasVG(dadosTombamento, dadosRegistrado);
+    setTimeout(()=>atualizarGraficosVG(dadosTombamento, dadosRegistrado), 150);
+    renderizarResumoMunicipioVG(dadosTombamento, dadosRegistrado);
+    setTimeout(iframeH, 300);
+}
+
+function inicializarComboMunicipioVG() {
+    const municipios = [...new Set([...dadosTombamento.map(r=>r.cidade), ...dadosRegistrado.map(r=>r.municipio)].filter(Boolean))].sort();
+    const opts = municipios.map(m=>({ value:m, label:m }));
+    if (!window._combos['filtroMunicipioVG']) window._combos['filtroMunicipioVG'] = new ComboFilter('filtroMunicipioVG', opts, ()=>{});
+    else window._combos['filtroMunicipioVG'].updateOptions(opts);
+}
+
+function aplicarFiltroMunicipioVG() {
+    const municipio = window._combos['filtroMunicipioVG']?.value || '';
+    const t = municipio ? dadosTombamento.filter(r=>r.cidade===municipio) : dadosTombamento;
+    const r = municipio ? dadosRegistrado.filter(r=>r.municipio===municipio) : dadosRegistrado;
+    atualizarMetricasVG(t, r);
+    atualizarGraficosVG(t, r);
+    renderizarResumoMunicipioVG(t, r);
+    setTimeout(iframeH, 200);
+}
+
+function limparFiltroMunicipioVG() {
+    window._combos['filtroMunicipioVG']?.clear();
+    aplicarFiltroMunicipioVG();
+}
+
+function atualizarMetricasVG(tomb, reg) {
+    const el = document.getElementById('metricasVG'); if (!el) return;
+    const municipiosSet = new Set([...tomb.map(r=>r.cidade), ...reg.map(r=>r.municipio)].filter(Boolean));
+    el.innerHTML = `
+        <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-header">Bens Tombados</div>
+            <div class="metric-body"><div class="metric-value">${tomb.length.toLocaleString('pt-BR')}</div><div class="metric-sublabel">registros na base de tombamentos</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-header">Bens Registrados</div>
+            <div class="metric-body"><div class="metric-value">${reg.length.toLocaleString('pt-BR')}</div><div class="metric-sublabel">patrimônio imaterial</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-header">Municípios</div>
+            <div class="metric-body"><div class="metric-value">${municipiosSet.size.toLocaleString('pt-BR')}</div><div class="metric-sublabel">com bem protegido</div></div></div></div>
+        <div class="col-6 col-md-3"><div class="metric-card"><div class="metric-header">Total Geral</div>
+            <div class="metric-body"><div class="metric-value" style="color:#b93c42">${(tomb.length+reg.length).toLocaleString('pt-BR')}</div><div class="metric-sublabel">bens culturais protegidos</div></div></div></div>`;
+}
+
+function contarPor(lista, campo) {
+    const m = {}; lista.forEach(r => { const k = r[campo] || 'Não informado'; m[k]=(m[k]||0)+1; }); return m;
+}
+function topN(mapa, n) { return Object.entries(mapa).sort((a,b)=>b[1]-a[1]).slice(0,n); }
+
+function atualizarGraficosVG(tomb, reg) {
+    const paleta = ['#20445d','#b93c42','#3d5566','#db233f','#54697b','#8fa4b3','#a32c32','#c8d2db','#6b5ca5','#3d8b7d'];
+    const destruir = id => { if (window._charts[id]) window._charts[id].destroy(); };
+    const criar = (id, tipo, labels, data, opts={}) => {
+        const ctx = document.getElementById(id); if (!ctx) return;
+        destruir(id);
+        window._charts[id] = new Chart(ctx, {
+            type: tipo,
+            data: { labels, datasets: [{ label:opts.label||'', data, backgroundColor: opts.cores||paleta, borderWidth: tipo==='pie'||tipo==='doughnut' ? 1 : 0, borderColor:'#fff' }] },
+            options: {
+                responsive:true, maintainAspectRatio:false,
+                indexAxis: opts.horizontal ? 'y' : 'x',
+                plugins:{ legend:{ display: opts.legend!==false, position:'bottom', labels:{font:{size:10.5},boxWidth:12} } },
+                scales: (tipo==='pie'||tipo==='doughnut') ? {} : { x:{ticks:{font:{size:10}}}, y:{ticks:{font:{size:10},precision:0}, beginAtZero:true} }
+            }
+        });
+    };
+
+    // Tombamentos
+    const porTipo = topN(contarPor(tomb,'tipo'), 10);
+    criar('chartTipoTombamento', 'doughnut', porTipo.map(x=>nomeTipo(x[0])), porTipo.map(x=>x[1]));
+
+    const topMunT = topN(contarPor(tomb,'cidade'), 10);
+    criar('chartMunicipioTombamento', 'bar', topMunT.map(x=>x[0]), topMunT.map(x=>x[1]), { horizontal:true, legend:false, cores:['#20445d'] });
+
+    const decadas = {};
+    tomb.forEach(r => { if (r.ano) { const d = Math.floor(r.ano/10)*10 + 's'; decadas[d]=(decadas[d]||0)+1; } });
+    const decadasOrd = Object.entries(decadas).sort((a,b)=>parseInt(a[0])-parseInt(b[0]));
+    criar('chartDecadaTombamento', 'bar', decadasOrd.map(x=>x[0]), decadasOrd.map(x=>x[1]), { legend:false, cores:['#b93c42'] });
+
+    // Registrados
+    const porEsfera = contarPor(reg,'esfera_de_protecao');
+    criar('chartEsferaRegistrado', 'pie', Object.keys(porEsfera), Object.values(porEsfera), { cores:['#b93c42','#20445d','#3d8b7d'] });
+
+    const topMunR = topN(contarPor(reg,'municipio'), 10);
+    criar('chartMunicipioRegistrado', 'bar', topMunR.map(x=>x[0]), topMunR.map(x=>x[1]), { horizontal:true, legend:false, cores:['#b93c42'] });
+
+    const topCat = topN(contarPor(reg,'categoria'), 10);
+    criar('chartCategoriaRegistrado', 'bar', topCat.map(x=>x[0]), topCat.map(x=>x[1]), { legend:false, cores:['#6b5ca5'] });
+}
+
+// Resumo por Município: tabela ordenável, clique navega para a Consulta Individual
+const COLUNAS_RESUMO = [
+    { col:'nome',       label:'Município',        align:'left'   },
+    { col:'tombados',   label:'Bens Tombados',    align:'center' },
+    { col:'registrados',label:'Bens Registrados', align:'center' },
+    { col:'total',      label:'Total',            align:'center' },
+];
+let sortCfgResumo = { col:'total', dir:'desc' };
+let resumoMunicipioDadosBase = [];
+
+function renderizarResumoMunicipioVG(tomb, reg) {
+    const grupos = {};
+    tomb.forEach(r => { const k = r.cidade || 'Não informado'; if (!grupos[k]) grupos[k] = { nome:k, tombados:0, registrados:0 }; grupos[k].tombados++; });
+    reg.forEach(r => { const k = r.municipio || 'Não informado'; if (!grupos[k]) grupos[k] = { nome:k, tombados:0, registrados:0 }; grupos[k].registrados++; });
+    resumoMunicipioDadosBase = Object.values(grupos).map(g => ({ ...g, total: g.tombados + g.registrados }));
+    renderizarTabelaResumoMunicipio();
+}
+
+function renderizarTabelaResumoMunicipio() {
+    const el = document.getElementById('resumoMunicipio'); if (!el) return;
+    if (!resumoMunicipioDadosBase.length) { el.innerHTML = '<div class="empty-state">Sem dados.</div>'; return; }
+
+    const linhas = [...resumoMunicipioDadosBase].sort((a,b)=>{
+        const va=a[sortCfgResumo.col], vb=b[sortCfgResumo.col];
+        if (typeof va === 'string') { const sa=va.toLowerCase(), sb=vb.toLowerCase(); return sortCfgResumo.dir==='asc'?(sa<sb?-1:sa>sb?1:0):(sa>sb?-1:sa<sb?1:0); }
+        return sortCfgResumo.dir==='asc' ? va-vb : vb-va;
+    });
+
+    el.innerHTML = `
+    <div class="table-fixed-header-container" style="max-height:400px;">
+        <table class="table">
+            <thead><tr>
+                ${COLUNAS_RESUMO.map(c=>{
+                    const icone = sortCfgResumo.col===c.col ? `<i class="material-icons sort-icon">${sortCfgResumo.dir==='asc'?'arrow_upward':'arrow_downward'}</i>` : `<i class="material-icons sort-icon" style="opacity:.35">unfold_more</i>`;
+                    return `<th class="sortable-header${c.align==='center'?' text-center':''}" onclick="sortResumoMunicipioVG('${c.col}')">${c.label}${icone}</th>`;
+                }).join('')}
+            </tr></thead>
+            <tbody>
+                ${linhas.map(g=>`
+                <tr class="resumo-tr" onclick="irParaConsultaComFiltro('${esc(g.nome)}')">
+                    <td>${g.nome}</td>
+                    <td class="text-center">${g.tombados}</td>
+                    <td class="text-center">${g.registrados}</td>
+                    <td class="text-center" style="font-weight:700;color:#1a3a5c;">${g.total}</td>
+                </tr>`).join('')}
+            </tbody>
+        </table>
+    </div>`;
+}
+
+function sortResumoMunicipioVG(col) {
+    sortCfgResumo.dir = (sortCfgResumo.col===col && sortCfgResumo.dir==='asc') ? 'desc' : 'asc';
+    sortCfgResumo.col = col;
+    renderizarTabelaResumoMunicipio();
+}
+
+function irParaConsultaComFiltro(municipio) {
+    document.getElementById('consulta-tab').click();
+    setTimeout(()=>{
+        limparFiltrosConsulta();
+        window._combos['filtroMunicipio']?.setValue(municipio, false);
+        aplicarFiltrosConsulta();
+        voltarAoTopo();
+    }, 150);
+}
+</script>
+<script>
+// ============================================================
+// 6. CONSULTA INDIVIDUAL
+// ============================================================
+const COLUNAS_TOMBAMENTO = [
+    { col:'cidade', label:'Município' },
+    { col:'denominacao_do_bem_tombado', label:'Bem Tombado', wrap:true },
+    { col:'endereco', label:'Endereço', wrap:true },
+    { col:'tipo', label:'Tipo' },
+    { col:'ano_original', label:'Ano' },
+];
+const COLUNAS_REGISTRADO = [
+    { col:'municipio', label:'Município' },
+    { col:'nome_do_bem_registrado', label:'Bem Registrado', wrap:true },
+    { col:'local_de_ocorrencia_do_bem_imaterial_registrado', label:'Local de Ocorrência', wrap:true },
+    { col:'esfera_de_protecao', label:'Esfera' },
+    { col:'categoria', label:'Categoria' },
+    { col:'exercicio', label:'Exercício' },
+];
+function colunasAtivas() { return datasetAtivo==='tombamento' ? COLUNAS_TOMBAMENTO : COLUNAS_REGISTRADO; }
+function dadosBaseAtivos() { return datasetAtivo==='tombamento' ? dadosTombamento : dadosRegistrado; }
+function campoBuscaAtivo() { return datasetAtivo==='tombamento' ? 'denominacao_do_bem_tombado' : 'nome_do_bem_registrado'; }
+function campoMunicipioAtivo() { return datasetAtivo==='tombamento' ? 'cidade' : 'municipio'; }
+
+function renderizarConsulta() {
+    const c = document.getElementById('consulta-content'); if (!c) return;
+    dadosFiltrados = ordenar(dadosBaseAtivos(), sortCfg.col, sortCfg.dir);
+
+    c.innerHTML = `
+    <div class="filter-container">
+        <label class="filter-label" style="margin-bottom:10px;">Base de Dados</label>
+        <div class="dataset-toggle" id="datasetToggle">
+            <button data-ds="tombamento" class="${datasetAtivo==='tombamento'?'active':''}"><i class="material-icons" style="font-size:15px;">apartment</i>Bens Tombados</button>
+            <button data-ds="registrado" class="${datasetAtivo==='registrado'?'active':''}"><i class="material-icons" style="font-size:15px;">celebration</i>Bens Registrados</button>
+        </div>
+
+        <div class="filters-row" style="margin-top:16px;">
+            <div class="filter-group" style="flex:1.6;min-width:220px;">
+                <label class="filter-label">Município</label>
+                ${buildComboHTML('filtroMunicipio','Selecione ou digite o município...')}
+            </div>
+            <div class="filter-group" style="flex:1.2;min-width:180px;">
+                <label class="filter-label" id="labelFiltroCol3">${datasetAtivo==='tombamento'?'Tipo':'Esfera de Proteção'}</label>
+                ${buildComboHTML('filtroCol3','Selecione ou digite...')}
+            </div>
+            <div class="filter-group" style="flex:1.2;min-width:180px;">
+                <label class="filter-label" id="labelFiltroCol4">${datasetAtivo==='tombamento'?'Ano de Tombamento':'Categoria'}</label>
+                ${buildComboHTML('filtroCol4','Selecione ou digite...')}
+            </div>
+        </div>
+        <div class="botoes-abaixo">
+            <button class="btn-pesquisa" onclick="aplicarFiltrosConsulta()"><i class="material-icons">refresh</i> Atualizar Filtros</button>
+            <button class="btn-secondary-custom" onclick="limparFiltrosConsulta()"><i class="material-icons">clear</i> Limpar Filtros</button>
+        </div>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <button class="btn-export" onclick="exportarConsultaCSV()"><i class="material-icons">description</i> CSV</button>
+            <button class="btn-export" onclick="exportarConsultaPDF()"><i class="material-icons">print</i> PDF</button>
+            <button class="btn-export" onclick="compartilharLinkConsulta()"><i class="material-icons">share</i> Compartilhar Link</button>
+        </div>
+        <div class="toolbar-right" style="display:flex;align-items:center;gap:8px;">
+            <input type="text" id="buscaConsulta" maxlength="80" placeholder="Buscar pelo nome do bem..." class="form-control" style="height:32px;font-size:12px;width:260px;padding:4px 10px;" oninput="buscarConsulta(this.value)">
+            <span class="table-badge" id="badgeConsulta">${dadosFiltrados.length} registros</span>
+        </div>
+    </div>
+
+    <!-- TABELA -->
+    <div class="table-container">
+        <div class="table-fixed-header-container">
+            <table class="table" id="tabelaConsulta">
+                <thead id="theadConsulta"><tr></tr></thead>
+                <tbody id="tbodyConsulta"></tbody>
+            </table>
+        </div>
+        <div class="pagination-container" id="pagContainerConsulta"></div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+        <button class="btn-topo" onclick="voltarAoTopo()"><i class="material-icons">arrow_upward</i> Voltar ao topo</button>
+    </div>`;
+
+    document.querySelectorAll('#datasetToggle button').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+            datasetAtivo = btn.dataset.ds;
+            sortCfg = { col:null, dir:'asc' };
+            renderizarConsulta();
+        });
+    });
+
+    inicializarCombosConsulta();
+    reconstruirCabecalhoConsulta();
+    paginaAtual = 1;
+    atualizarTabelaConsulta();
+    setTimeout(iframeH, 300);
+}
+
+function inicializarCombosConsulta() {
+    const base = dadosBaseAtivos();
+    const municipios = opcoesUnicas(base, campoMunicipioAtivo());
+    window._combos['filtroMunicipio'] = new ComboFilter('filtroMunicipio', municipios, ()=>{});
+
+    if (datasetAtivo === 'tombamento') {
+        const tipos = opcoesUnicas(base, 'tipo', v=>nomeTipo(v));
+        window._combos['filtroCol3'] = new ComboFilter('filtroCol3', tipos, ()=>{});
+        const anos = [...new Set(base.map(r=>r.ano).filter(Boolean))].sort((a,b)=>b-a).map(a=>({value:String(a),label:String(a)}));
+        window._combos['filtroCol4'] = new ComboFilter('filtroCol4', anos, ()=>{});
+    } else {
+        const esferas = opcoesUnicas(base, 'esfera_de_protecao');
+        window._combos['filtroCol3'] = new ComboFilter('filtroCol3', esferas, ()=>{});
+        const categorias = opcoesUnicas(base, 'categoria');
+        window._combos['filtroCol4'] = new ComboFilter('filtroCol4', categorias, ()=>{});
+    }
+}
+
+function aplicarFiltrosConsulta() {
+    const municipio = window._combos['filtroMunicipio']?.value || '';
+    const col3 = window._combos['filtroCol3']?.value || '';
+    const col4 = window._combos['filtroCol4']?.value || '';
+    const busca = (document.getElementById('buscaConsulta')?.value || '').toLowerCase().trim();
+    const base = dadosBaseAtivos();
+    const campoMun = campoMunicipioAtivo();
+    const campoBusca = campoBuscaAtivo();
+
+    let filtrado = base.filter(r => {
+        if (municipio && r[campoMun] !== municipio) return false;
+        if (busca && !(r[campoBusca]||'').toLowerCase().includes(busca)) return false;
+        if (datasetAtivo === 'tombamento') {
+            if (col3 && r.tipo !== col3) return false;
+            if (col4 && String(r.ano) !== col4) return false;
+        } else {
+            if (col3 && r.esfera_de_protecao !== col3) return false;
+            if (col4 && r.categoria !== col4) return false;
+        }
+        return true;
+    });
+
+    dadosFiltrados = ordenar(filtrado, sortCfg.col, sortCfg.dir);
+    paginaAtual = 1;
+    atualizarTabelaConsulta();
+    const badge = document.getElementById('badgeConsulta');
+    if (badge) badge.textContent = dadosFiltrados.length + ' registros';
+}
+
+function limparFiltrosConsulta() {
+    window._combos['filtroMunicipio']?.clear();
+    window._combos['filtroCol3']?.clear();
+    window._combos['filtroCol4']?.clear();
+    const busca = document.getElementById('buscaConsulta'); if (busca) busca.value = '';
+    aplicarFiltrosConsulta();
+}
+
+function buscarConsulta(termo) { aplicarFiltrosConsulta(); }
+
+function reconstruirCabecalhoConsulta() {
+    const thead = document.getElementById('theadConsulta'); if (!thead) return;
+    thead.innerHTML = '<tr>' + colunasAtivas().map(c=>{
+        const icone = sortCfg.col===c.col ? `<i class="material-icons sort-icon">${sortCfg.dir==='asc'?'arrow_upward':'arrow_downward'}</i>` : `<i class="material-icons sort-icon" style="opacity:.35">unfold_more</i>`;
+        return `<th class="sortable-header${c.wrap?' th-wrap':''}" onclick="sortConsulta('${c.col}')">${c.label}${icone}</th>`;
+    }).join('') + '<th style="width:60px;">Detalhe</th></tr>';
+}
+
+function sortConsulta(col) {
+    sortCfg.dir = (sortCfg.col===col && sortCfg.dir==='asc') ? 'desc' : 'asc';
+    sortCfg.col = col;
+    dadosFiltrados = ordenar(dadosFiltrados, sortCfg.col, sortCfg.dir);
+    reconstruirCabecalhoConsulta();
+    paginaAtual = 1;
+    atualizarTabelaConsulta();
+}
+
+function atualizarTabelaConsulta() {
+    const tbody = document.getElementById('tbodyConsulta'); if (!tbody) return;
+    const cols = colunasAtivas();
+    const total = dadosFiltrados.length;
+    const totalPaginas = Math.max(1, Math.ceil(total/porPagina));
+    if (paginaAtual > totalPaginas) paginaAtual = totalPaginas;
+    const inicio = (paginaAtual-1)*porPagina;
+    const pagina = dadosFiltrados.slice(inicio, inicio+porPagina);
+
+    if (!pagina.length) {
+        tbody.innerHTML = `<tr><td colspan="${cols.length+1}"><div class="empty-state"><i class="material-icons" style="font-size:32px;display:block;margin-bottom:6px;">search_off</i>Nenhum registro encontrado para os filtros aplicados.</div></td></tr>`;
+    } else {
+        tbody.innerHTML = pagina.map((r, i) => {
+            const idxGlobal = inicio + i;
+            const celulas = cols.map(c => {
+                let v = r[c.col];
+                if (c.col === 'tipo') v = badgeTipo(v);
+                else if (c.col === 'esfera_de_protecao') v = badgeEsfera(v);
+                else if (c.col === colunasAtivas()[1].col) v = `<a class="bem-link" onclick="abrirDetalheConsulta(${idxGlobal})">${v||'-'}</a>`;
+                else v = v || '<span class="nao-aplica">Não informado</span>';
+                return `<td>${v}</td>`;
+            }).join('');
+            return `<tr>${celulas}<td class="text-center"><button class="btn-export" style="height:28px;padding:0 8px;" onclick="abrirDetalheConsulta(${idxGlobal})"><i class="material-icons" style="font-size:15px;">visibility</i></button></td></tr>`;
+        }).join('');
+    }
+
+    renderizarPaginacao('pagContainerConsulta', total, totalPaginas, (p)=>{ paginaAtual=p; atualizarTabelaConsulta(); }, (novoTam)=>{ porPagina=novoTam; paginaAtual=1; atualizarTabelaConsulta(); });
+    setTimeout(iframeH, 150);
+}
+
+function abrirDetalheConsulta(idx) {
+    const r = dadosFiltrados[idx]; if (!r) return;
+    let html = '';
+    if (datasetAtivo === 'tombamento') {
+        document.getElementById('modalTitulo').textContent = r.denominacao_do_bem_tombado || 'Bem Tombado';
+        html += `<div class="info-card primary"><div class="info-label">Município</div><div class="info-value">${r.cidade||'-'}</div></div>`;
+        html += `<div class="info-card"><div class="info-label">Bem Tombado</div><div class="info-value">${r.denominacao_do_bem_tombado||'-'}</div></div>`;
+        html += `<div class="info-card"><div class="info-label">Endereço</div><div class="info-value">${r.endereco}</div></div>`;
+        html += `<div class="info-card"><div class="info-label">Tipo</div><div class="info-value">${nomeTipo(r.tipo)} <span style="color:#94a3b8;font-weight:400;">(${r.tipo_original})</span></div></div>`;
+        html += `<div class="info-card"><div class="info-label">Ano de Tombamento</div><div class="info-value highlight">${r.ano_original}</div></div>`;
+    } else {
+        document.getElementById('modalTitulo').textContent = r.nome_do_bem_registrado || 'Bem Registrado';
+        html += `<div class="info-card primary"><div class="info-label">Município</div><div class="info-value">${r.municipio||'-'}</div></div>`;
+        html += `<div class="info-card"><div class="info-label">Bem Registrado</div><div class="info-value">${r.nome_do_bem_registrado||'-'}</div></div>`;
+        html += `<div class="info-card"><div class="info-label">Local de Ocorrência</div><div class="info-value">${r.local_de_ocorrencia_do_bem_imaterial_registrado}</div></div>`;
+        html += `<div class="info-card"><div class="info-label">Esfera de Proteção</div><div class="info-value">${r.esfera_de_protecao||'-'}</div></div>`;
+        html += `<div class="info-card"><div class="info-label">Categoria</div><div class="info-value">${r.categoria||'-'}</div></div>`;
+        html += `<div class="info-card"><div class="info-label">Ato de Homologação</div><div class="info-value">${r.homologacao}</div></div>`;
+        html += `<div class="info-card"><div class="info-label">Exercício de Pontuação</div><div class="info-value highlight">${r.exercicio}</div></div>`;
+    }
+    document.getElementById('modalBody').innerHTML = html;
+    new bootstrap.Modal(document.getElementById('modalDetalhe')).show();
+}
+
+function exportarConsultaCSV() {
+    const cols = colunasAtivas();
+    const nome = (datasetAtivo==='tombamento' ? 'bens_tombados' : 'bens_registrados') + '_filtrado.csv';
+    baixarCSV(nome, cols.map(c=>c.col), cols.map(c=>c.label), dadosFiltrados);
+    mostrarToast('CSV exportado com sucesso!');
+}
+function exportarConsultaPDF() {
+    const cols = colunasAtivas();
+    const titulo = datasetAtivo==='tombamento' ? 'Bens Protegidos por Tombamento' : 'Bens Protegidos Registrados';
+    baixarPDF(titulo, cols.map(c=>c.col), cols.map(c=>c.label), dadosFiltrados);
+    mostrarToast('PDF exportado com sucesso!');
+}
+
+// Compartilhar link com filtros da Consulta Individual
+function compartilharLinkConsulta() {
+    const params = new URLSearchParams();
+    params.set('base', datasetAtivo);
+    const municipio = window._combos['filtroMunicipio']?.value || '';
+    const col3 = window._combos['filtroCol3']?.value || '';
+    const col4 = window._combos['filtroCol4']?.value || '';
+    const busca = document.getElementById('buscaConsulta')?.value || '';
+    if (municipio) params.set('municipio', municipio);
+    if (col3) params.set('col3', col3);
+    if (col4) params.set('col4', col4);
+    if (busca) params.set('busca', busca);
+    params.set('tab', 'consulta');
+
+    const url = window.location.origin + window.location.pathname + '?' + params.toString();
+    const copiarTexto = (texto) => {
+        if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(texto);
+        const tmp = document.createElement('textarea');
+        tmp.value = texto; tmp.style.position='fixed'; tmp.style.opacity='0';
+        document.body.appendChild(tmp); tmp.select();
+        document.execCommand('copy'); document.body.removeChild(tmp);
+        return Promise.resolve();
+    };
+    copiarTexto(url).then(()=>mostrarToast('Link copiado para área de transferência!')).catch(()=>mostrarToast('Não foi possível copiar o link.'));
+}
+
+function aplicarFiltrosDaURL() {
+    const params = new URLSearchParams(window.location.search);
+    if (![...params.keys()].length) return;
+    const base = params.get('base');
+    if (base === 'tombamento' || base === 'registrado') { datasetAtivo = base; renderizarConsulta(); }
+
+    const municipio = params.get('municipio') || '';
+    const col3 = params.get('col3') || '';
+    const col4 = params.get('col4') || '';
+    const busca = params.get('busca') || '';
+
+    if (municipio) window._combos['filtroMunicipio']?.setValue(municipio, false);
+    if (col3) window._combos['filtroCol3']?.setValue(col3, false);
+    if (col4) window._combos['filtroCol4']?.setValue(col4, false);
+    if (busca && document.getElementById('buscaConsulta')) document.getElementById('buscaConsulta').value = busca;
+
+    if (params.get('tab') === 'consulta') document.getElementById('consulta-tab')?.click();
+    aplicarFiltrosConsulta();
+}
+
+// ============================================================
+// 7. PAGINAÇÃO (genérica)
+// ============================================================
+function renderizarPaginacao(containerId, total, totalPaginas, onPageChange, onPageSizeChange) {
+    const el = document.getElementById(containerId); if (!el) return;
+    const inicio = total===0 ? 0 : (paginaAtual-1)*porPagina+1;
+    const fim = Math.min(paginaAtual*porPagina, total);
+
+    let botoes = '';
+    const janela = 2;
+    for (let p=1; p<=totalPaginas; p++) {
+        if (p===1 || p===totalPaginas || (p>=paginaAtual-janela && p<=paginaAtual+janela)) {
+            botoes += `<button class="${p===paginaAtual?'active':''}" onclick="(${onPageChange.toString()})(${p})">${p}</button>`;
+        } else if (p===paginaAtual-janela-1 || p===paginaAtual+janela+1) {
+            botoes += `<span style="padding:0 4px;color:#94a3b8;">…</span>`;
+        }
+    }
+
+    el.innerHTML = `
+        <div class="pagination-info">
+            <span>${inicio}-${fim} de ${total.toLocaleString('pt-BR')}</span>
+            <div class="page-size-selector">
+                <span>Por página:</span>
+                <select id="${containerId}_size" onchange="(${onPageSizeChange.toString()})(parseInt(this.value))">
+                    ${[10,25,50,100].map(n=>`<option value="${n}" ${n===porPagina?'selected':''}>${n}</option>`).join('')}
+                </select>
+            </div>
+        </div>
+        <div class="pagination-controls">
+            <button ${paginaAtual===1?'disabled':''} onclick="(${onPageChange.toString()})(1)"><i class="material-icons">first_page</i></button>
+            <button ${paginaAtual===1?'disabled':''} onclick="(${onPageChange.toString()})(${paginaAtual-1})"><i class="material-icons">chevron_left</i></button>
+            ${botoes}
+            <button ${paginaAtual===totalPaginas?'disabled':''} onclick="(${onPageChange.toString()})(${paginaAtual+1})"><i class="material-icons">chevron_right</i></button>
+            <button ${paginaAtual===totalPaginas?'disabled':''} onclick="(${onPageChange.toString()})(${totalPaginas})"><i class="material-icons">last_page</i></button>
+        </div>`;
+}
+</script>
+<script>
+// ============================================================
+// 8. DICIONÁRIO DE DADOS
+// ============================================================
+const DICIONARIO_TOMBAMENTO = [
+    { campo:'cidade', descricao:'Município de Minas Gerais onde o bem tombado está localizado.', tipo:'Texto' },
+    { campo:'denominacao_do_bem_tombado', descricao:'Nome ou denominação oficial do bem cultural tombado.', tipo:'Texto' },
+    { campo:'endereco', descricao:'Endereço, logradouro ou referência de localização do bem tombado.', tipo:'Texto' },
+    { campo:'tipo', descricao:'Sigla que classifica a natureza do bem: BI = Bem Imóvel, BM = Bem Móvel, CP = Conjunto Paisagístico, NH = Núcleo Histórico.', tipo:'Categórico (sigla)' },
+    { campo:'ano_de_tombamento', descricao:'Ano em que o tombamento foi efetivado. Em alguns registros a fonte traz observações textuais (ex.: bem destruído) em vez de um ano.', tipo:'Numérico / Texto' },
+];
+const DICIONARIO_REGISTRADO = [
+    { campo:'municipio', descricao:'Município de Minas Gerais de origem do bem cultural imaterial registrado.', tipo:'Texto' },
+    { campo:'homologacao', descricao:'Ato normativo (decreto, portaria ou inscrição) que homologou o registro do bem.', tipo:'Texto' },
+    { campo:'nome_do_bem_registrado', descricao:'Nome do bem cultural de natureza imaterial registrado (festa, celebração, saber, forma de expressão, ofício ou lugar).', tipo:'Texto' },
+    { campo:'local_de_ocorrencia_do_bem_imaterial_registrado', descricao:'Local ou distrito onde ocorre a manifestação cultural registrada.', tipo:'Texto' },
+    { campo:'esfera_de_protecao', descricao:'Esfera responsável pelo ato de registro do bem: Municipal, Estadual ou Federal.', tipo:'Categórico' },
+    { campo:'categoria', descricao:'Código de categoria conforme a metodologia do ICMS Patrimônio Cultural do IEPHA-MG. Prefixo RI = Registro de Interesse; sufixos: CEL = Celebrações, FOR = Formas de Expressão, SAB = Saberes, LUG = Lugares. Variações numéricas correspondem a subcategorias da metodologia de pontuação.', tipo:'Categórico (sigla)' },
+    { campo:'exercicio_aceito_para_efeito_de_pontuacao', descricao:'Ano de exercício considerado para fins de pontuação do bem no cálculo do ICMS Patrimônio Cultural.', tipo:'Numérico' },
+];
+
+function renderizarDicionario() {
+    const c = document.getElementById('dicionario-content'); if (!c) return;
+    c.innerHTML = `
+    <div class="filter-container">
+        <div>
+            <h5 style="font-size:15px;font-weight:700;color:#20445d;margin:0;">Dicionário de Dados</h5>
+            <p style="color:#6c757d;font-size:12px;margin:0;">Descrição das colunas das bases de Bens Tombados e Bens Registrados</p>
+        </div>
+        <div style="margin-top:14px;">
+            <input type="text" id="dicBusca" class="form-control" style="height:36px;font-size:12px;max-width:320px;padding:4px 12px;" placeholder="Buscar campo ou descrição..." oninput="buscarDicionario(this.value)">
+        </div>
+    </div>
+
+    <div class="metadata-container">
+        <div class="metadata-header">
+            <i class="material-icons" style="margin-right:8px;">apartment</i>bens_protegidos_tombamentos.csv
+            <span style="margin-left:8px;background:rgba(255,255,255,0.2);padding:2px 10px;border-radius:10px;font-size:11px;">${DICIONARIO_TOMBAMENTO.length} campos</span>
+            <a href="${REPO_TOMBAMENTO}" target="_blank" style="margin-left:auto;color:rgba(255,255,255,0.85);font-size:11px;display:flex;align-items:center;gap:3px;text-decoration:none;">
+                <i class="material-icons" style="font-size:14px;">open_in_new</i> Ver no GitHub
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="metadata-table">
+                <thead><tr><th>Campo</th><th>Descrição</th><th>Tipo</th></tr></thead>
+                <tbody>
+                    ${DICIONARIO_TOMBAMENTO.map(row=>`<tr class="dic-linha">
+                        <td><code>${row.campo}</code></td>
+                        <td>${row.descricao}</td>
+                        <td><span style="background:#e2e8f0;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;color:#475569;">${row.tipo}</span></td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="metadata-container">
+        <div class="metadata-header">
+            <i class="material-icons" style="margin-right:8px;">celebration</i>bens_protegidos_registrados.csv
+            <span style="margin-left:8px;background:rgba(255,255,255,0.2);padding:2px 10px;border-radius:10px;font-size:11px;">${DICIONARIO_REGISTRADO.length} campos</span>
+            <a href="${REPO_REGISTRADO}" target="_blank" style="margin-left:auto;color:rgba(255,255,255,0.85);font-size:11px;display:flex;align-items:center;gap:3px;text-decoration:none;">
+                <i class="material-icons" style="font-size:14px;">open_in_new</i> Ver no GitHub
+            </a>
+        </div>
+        <div class="table-responsive">
+            <table class="metadata-table">
+                <thead><tr><th>Campo</th><th>Descrição</th><th>Tipo</th></tr></thead>
+                <tbody>
+                    ${DICIONARIO_REGISTRADO.map(row=>`<tr class="dic-linha">
+                        <td><code>${row.campo}</code></td>
+                        <td>${row.descricao}</td>
+                        <td><span style="background:#e2e8f0;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:600;color:#475569;">${row.tipo}</span></td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="filter-container">
+        <div class="filter-label" style="margin-bottom:8px;">SOBRE AS FONTES</div>
+        <p style="font-size:12.5px;color:#475569;line-height:1.7;margin:0;">
+            Os dados são publicados pelo Instituto Estadual do Patrimônio Histórico e Artístico de Minas Gerais (IEPHA-MG) e
+            disponibilizados nos repositórios abertos do Portal da Transparência de Minas Gerais. A base de <strong>Bens Tombados</strong>
+            reúne o patrimônio material protegido por tombamento municipal, estadual ou federal. A base de <strong>Bens Registrados</strong>
+            reúne o patrimônio cultural de natureza imaterial protegido por meio de registro.
+        </p>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+        <button class="btn-topo" onclick="voltarAoTopo()"><i class="material-icons">arrow_upward</i> Voltar ao topo</button>
+    </div>`;
+    setTimeout(iframeH, 200);
+}
+
+function buscarDicionario(termo) {
+    const t = (termo||'').toLowerCase().trim();
+    document.querySelectorAll('.dic-linha').forEach(row => {
+        const match = !t || row.textContent.toLowerCase().includes(t);
+        row.style.display = match ? '' : 'none';
+        row.classList.toggle('dic-row-highlight', !!t && match);
+    });
+}
+
+// ============================================================
+// 9. DOWNLOADS
+// ============================================================
+function renderizarDownloads() {
+    const c = document.getElementById('downloads-content'); if (!c) return;
+    c.innerHTML = `
+    <div class="filter-container">
+        <div style="text-align:center;padding:16px 0 8px;">
+            <i class="material-icons" style="font-size:48px;color:#20445d;">cloud_download</i>
+            <h5 style="margin-top:8px;margin-bottom:4px;font-size:15px;">Repositórios de Dados Abertos</h5>
+            <p style="color:#6c757d;font-size:13px;margin-bottom:12px;">Acesse o histórico completo e versionado das bases no GitHub</p>
+            <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+                <a href="${REPO_TOMBAMENTO}" target="_blank" class="btn-pesquisa text-decoration-none">
+                    <i class="material-icons">apartment</i> Repositório - Bens Tombados
+                </a>
+                <a href="${REPO_REGISTRADO}" target="_blank" class="btn-pesquisa text-decoration-none">
+                    <i class="material-icons">celebration</i> Repositório - Bens Registrados
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-container">
+        <h5 style="font-size:14px;font-weight:700;color:#20445d;margin-bottom:16px;"><i class="material-icons" style="vertical-align:middle;margin-right:4px;">download</i> Download Direto</h5>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+            <div style="background:#f8fafd;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;min-width:220px;flex:1;">
+                <div style="font-weight:700;color:#20445d;font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:6px;"><i class="material-icons" style="font-size:17px;">apartment</i> Bens Tombados</div>
+                <div style="font-size:11.5px;color:#64748b;margin-bottom:10px;">${dadosTombamento.length.toLocaleString('pt-BR')} registro(s) &middot; ${new Set(dadosTombamento.map(r=>r.cidade)).size} municípios</div>
+                <button class="btn-export" style="width:100%;justify-content:center;" onclick='baixarCSV("bens_tombados_completo.csv", ${JSON.stringify(COLUNAS_TOMBAMENTO.map(c=>c.col))}, ${JSON.stringify(COLUNAS_TOMBAMENTO.map(c=>c.label))}, dadosTombamento)'>
+                    <i class="material-icons">description</i> CSV Completo
+                </button>
+            </div>
+            <div style="background:#f8fafd;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;min-width:220px;flex:1;">
+                <div style="font-weight:700;color:#20445d;font-size:14px;margin-bottom:8px;display:flex;align-items:center;gap:6px;"><i class="material-icons" style="font-size:17px;">celebration</i> Bens Registrados</div>
+                <div style="font-size:11.5px;color:#64748b;margin-bottom:10px;">${dadosRegistrado.length.toLocaleString('pt-BR')} registro(s) &middot; ${new Set(dadosRegistrado.map(r=>r.municipio)).size} municípios</div>
+                <button class="btn-export" style="width:100%;justify-content:center;" onclick='baixarCSV("bens_registrados_completo.csv", ${JSON.stringify(COLUNAS_REGISTRADO.map(c=>c.col))}, ${JSON.stringify(COLUNAS_REGISTRADO.map(c=>c.label))}, dadosRegistrado)'>
+                    <i class="material-icons">description</i> CSV Completo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="filter-container">
+        <h5 style="font-size:14px;font-weight:700;color:#20445d;margin-bottom:8px;"><i class="material-icons" style="vertical-align:middle;margin-right:4px;">filter_alt</i> Exportar dados filtrados</h5>
+        <p style="font-size:12.5px;color:#475569;margin-bottom:14px;">
+            Exporte o resultado com os filtros aplicados na aba <strong>Consulta Individual</strong>
+            (base selecionada: <span style="font-weight:700;color:#1a3a5c;">${datasetAtivo==='tombamento'?'Bens Tombados':'Bens Registrados'}</span>,
+            <span style="font-weight:700;color:#1a3a5c;">${dadosFiltrados.length.toLocaleString('pt-BR')}</span> registros).
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn-pesquisa" onclick="exportarConsultaCSV()"><i class="material-icons">description</i>Exportar CSV</button>
+            <button class="btn-secondary-custom" onclick="exportarConsultaPDF()"><i class="material-icons">picture_as_pdf</i>Exportar PDF</button>
+        </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;margin-top:12px;">
+        <button class="btn-topo" onclick="voltarAoTopo()"><i class="material-icons">arrow_upward</i> Voltar ao topo</button>
+    </div>`;
+    setTimeout(iframeH, 200);
+}
+</script>
+<script>
+// ============================================================
+// 10. COMBOBOX FILTER (componente genérico)
+// ============================================================
+function buildComboHTML(id, placeholder='Selecione ou digite...') {
+    return `<div class="combo-filter-wrap">
+        <input type="text" class="combo-filter-input form-control" id="${id}" placeholder="${placeholder}" autocomplete="off">
+        <button class="combo-clear-btn" title="Limpar"><i class="material-icons" style="font-size:14px;">close</i></button>
+        <div class="combo-filter-dropdown"></div>
+    </div>`;
+}
+
+class ComboFilter {
+    constructor(inputId, options, onChange) {
+        this.inputId = inputId;
+        this.allOptions = options || [];
+        this.value = '';
+        this.onChange = onChange;
+        this.input = document.getElementById(inputId);
+        if (!this.input) return;
+        this.wrap = this.input.closest('.combo-filter-wrap');
+        this.dropdown = this.wrap ? this.wrap.querySelector('.combo-filter-dropdown') : null;
+        this.clearBtn = this.wrap ? this.wrap.querySelector('.combo-clear-btn') : null;
+        this.renderOptions(this.allOptions);
+        this.input.addEventListener('focus', ()=>{ this.renderOptions(this.filterOpts(this.input.value)); this.open(); });
+        this.input.addEventListener('input', ()=>{ this.renderOptions(this.filterOpts(this.input.value)); this.open(); if(this.clearBtn) this.clearBtn.classList.toggle('visible', !!this.input.value); });
+        this.input.addEventListener('keydown', (e)=>this.handleKey(e));
+        document.addEventListener('mousedown', (e)=>{ if (this.wrap && !this.wrap.contains(e.target)) this.close(); });
+        if (this.clearBtn) this.clearBtn.addEventListener('mousedown', (e)=>{ e.preventDefault(); this.clear(); });
+    }
+    filterOpts(term) {
+        const t = (term||'').toLowerCase().trim();
+        if (!t) return this.allOptions;
+        return this.allOptions.filter(o => o.label.toLowerCase().includes(t));
+    }
+    handleKey(e) {
+        if (e.key === 'Escape') { this.close(); return; }
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const active = this.dropdown ? this.dropdown.querySelector('.combo-filter-option.active') : null;
+            if (active) this.selectOption(active.dataset.value, active.dataset.label);
+            this.close(); return;
+        }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!this.dropdown) return;
+            const opts = [...this.dropdown.querySelectorAll('.combo-filter-option')];
+            if (!opts.length) return;
+            let idx = opts.findIndex(o=>o.classList.contains('active'));
+            idx = e.key==='ArrowDown' ? Math.min(idx+1,opts.length-1) : Math.max(idx-1,0);
+            if (idx < 0) idx = 0;
+            opts.forEach((o,i)=>o.classList.toggle('active',i===idx));
+            opts[idx].scrollIntoView({block:'nearest'});
+        }
+    }
+    renderOptions(opts) {
+        if (!this.dropdown) return;
+        this.dropdown.innerHTML = opts.length === 0
+            ? '<div class="combo-filter-option" style="color:#94a3b8;cursor:default;">Nenhuma opção</div>'
+            : opts.map(o=>`<div class="combo-filter-option${this.value===o.value?' selected':''}" data-value="${o.value.replace(/"/g,'&quot;')}" data-label="${o.label.replace(/"/g,'&quot;')}">${o.label}</div>`).join('');
+        this.dropdown.querySelectorAll('.combo-filter-option').forEach(el=>{
+            el.addEventListener('mousedown', e=>{ e.preventDefault(); this.selectOption(el.dataset.value, el.dataset.label); });
+        });
+    }
+    selectOption(val, label) {
+        this.value = val;
+        this.input.value = label || val;
+        if (this.clearBtn) this.clearBtn.classList.toggle('visible', !!val);
+        this.close();
+        if (this.onChange) this.onChange(val);
+        if (this.dropdown) this.dropdown.querySelectorAll('.combo-filter-option').forEach(o=>o.classList.toggle('selected',o.dataset.value===val));
+    }
+    open() { if (this.dropdown) this.dropdown.classList.add('open'); }
+    close() { if (this.dropdown) this.dropdown.classList.remove('open'); }
+    clear() {
+        this.value = ''; this.input.value = '';
+        if (this.clearBtn) this.clearBtn.classList.remove('visible');
+        this.renderOptions(this.allOptions);
+        if (this.onChange) this.onChange('');
+    }
+    setValue(val, triggerChange=false) {
+        this.value = val;
+        const opt = this.allOptions.find(o=>o.value===val);
+        this.input.value = opt ? opt.label : (val||'');
+        if (this.clearBtn) this.clearBtn.classList.toggle('visible', !!val);
+        if (triggerChange && this.onChange) this.onChange(val);
+    }
+    updateOptions(newOpts, keepValue=false) {
+        this.allOptions = newOpts;
+        if (!keepValue || !newOpts.find(o=>o.value===this.value)) {
+            this.value = ''; this.input.value = '';
+            if (this.clearBtn) this.clearBtn.classList.remove('visible');
+        }
+        this.renderOptions(newOpts);
+    }
+}
+
+// ============================================================
+// 11. INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', ()=>{
+    carregarDados();
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab=>{
+        tab.addEventListener('shown.bs.tab', ()=> setTimeout(iframeH,300));
+    });
+    window.addEventListener('resize',()=>{ clearTimeout(window.rTimer); window.rTimer=setTimeout(iframeH,250); });
+});
+
+(function(){
+    function sendH() {
+        const h=Math.max(document.body.scrollHeight,document.documentElement.scrollHeight)+10;
+        try{if(window.parent&&window.parent!==window)window.parent.postMessage({iframeHeight:h,iframeResize:true,type:'resize'},'*');}catch(e){}
+    }
+    if(window.ResizeObserver) new ResizeObserver(sendH).observe(document.body);
+    else { window.addEventListener('resize',sendH); setInterval(sendH,2000); }
+    sendH();
+})();
+</script>
+</body>
+</html>
